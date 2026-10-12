@@ -4,9 +4,22 @@
 
 **The repository compares a Gaussian process, a random forest, a fingerprint neural network, and a message-passing graph neural network for aqueous solubility prediction, measuring accuracy and the reliability of predicted uncertainty as training labels are deliberately corrupted with noise.**
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23308184.svg)](https://doi.org/10.5281/zenodo.23308184)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.x-ee4c2c.svg)](https://pytorch.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+---
+
+## DOI and Archival Record
+
+This software is archived on Zenodo to support long-term preservation, reproducibility, and scholarly citation.
+
+**Current Version:** 0.1.2
+
+**DOI (all versions):** https://doi.org/10.5281/zenodo.23308184
+
+**DOI (v0.1.1):** https://doi.org/10.5281/zenodo.23308185
 
 ---
 
@@ -305,9 +318,11 @@ If you use this benchmark in research or teaching, please cite:
 Ajayi, O. O. (2026).
 
 Solubility Noise Benchmark: Molecular property models under label noise and scaffold shift
-(Version 0.1.0) [Computer software].
+(Version 0.1.2) [Computer software].
 
-GitHub. https://github.com/Oluwaseun-O-Ajayi/solubility-noise-benchmark
+Zenodo.
+
+DOI: 10.5281/zenodo.23308184
 ```
 
 ### BibTeX
@@ -317,8 +332,10 @@ GitHub. https://github.com/Oluwaseun-O-Ajayi/solubility-noise-benchmark
   author = {Ajayi, Oluwaseun O.},
   title = {Solubility Noise Benchmark: Molecular property models under label noise and scaffold shift},
   year = {2026},
-  version = {0.1.0},
-  url = {https://github.com/Oluwaseun-O-Ajayi/solubility-noise-benchmark}
+  version = {0.1.2},
+  publisher = {Zenodo},
+  doi = {10.5281/zenodo.23308184},
+  url = {https://doi.org/10.5281/zenodo.23308184}
 }
 ```
 
