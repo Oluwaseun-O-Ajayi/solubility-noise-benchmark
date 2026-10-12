@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "Solubility Noise Benchmark: Molecular property models under label noise and scaffold shift"
+authors:
+  - family-names: "Ajayi"
+    given-names: "Oluwaseun O."
+    orcid: "https://orcid.org/0000-0003-0040-7217"
+    affiliation: "University of Georgia"
+version: "0.1.0"
+date-released: 2026-10-11
+license: MIT
+repository-code: "https://github.com/Oluwaseun-O-Ajayi/solubility-noise-benchmark"
+keywords:
+  - molecular property prediction
+  - aqueous solubility
+  - label noise
+  - uncertainty quantification
+  - graph neural networks
+  - deep ensembles
+  - PyTorch
