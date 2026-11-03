@@ -30,7 +30,7 @@ STYLE = {"train_mean": ":", "esol_linear": "-", "gp_desc": "-", "gp_tanimoto": "
          "rf_fp": "--", "fp_net": "--", "graph_net": "-"}
 MARKER = {"train_mean": "", "esol_linear": "s", "gp_desc": "o", "gp_tanimoto": "o", "rf_desc": "^",
           "rf_fp": "^", "fp_net": "D", "graph_net": "D"}
-SPLITS = ["random", "scaffold", "cluster"]
+SPLITS = ["random", "cluster", "scaffold"]
 SPLIT_LABEL = {"random": "Random split", "scaffold": "Scaffold split", "cluster": "Cluster split"}
 
 plt.rcParams.update({
@@ -107,7 +107,8 @@ def line_panels(s, dataset, metric, ylabel, name, models=MODELS, reference=None,
         ax.set_xlabel("Added label noise σ (log units)" if noise == "gaussian" else "Fraction of outlier labels")
     axes[0][0].set_ylabel(ylabel)
     handles, labels = axes[0][0].get_legend_handles_labels()
-    fig.legend(handles, labels, loc="lower center", ncol=4, frameon=False, bbox_to_anchor=(0.5, -0.17))
+    fig.tight_layout(rect=(0, 0.16, 1, 1))
+    fig.legend(handles, labels, loc="lower center", ncol=4, frameon=False, bbox_to_anchor=(0.5, 0.0))
     save(fig, name)
 
 
