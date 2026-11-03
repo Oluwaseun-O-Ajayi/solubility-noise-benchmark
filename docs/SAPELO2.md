@@ -13,15 +13,23 @@ cd /scratch/ooa97459
 
 Jobs run from `/scratch`. Files there are deleted after 30 days without use, so step 7 copies the results out.
 
-## 2. Get the code
+## 2. Upload the code
+
+On your computer, in the folder where you saved `solubility-noise-benchmark-revision.zip`:
 
 ```bash
-git clone https://github.com/Oluwaseun-O-Ajayi/solubility-noise-benchmark.git
-cd solubility-noise-benchmark
-git checkout revision-digital-discovery
+scp solubility-noise-benchmark-revision.zip ooa97459@xfer.gacrc.uga.edu:/scratch/ooa97459/
 ```
 
-(If the branch is not on GitHub yet, push it from your computer first, or copy the folder with `scp -r` to `xfer.gacrc.uga.edu`.)
+Then on Sapelo2:
+
+```bash
+cd /scratch/ooa97459
+unzip solubility-noise-benchmark-revision.zip
+cd solubility-noise-benchmark
+```
+
+(Later, once the branch `revision-digital-discovery` is pushed to GitHub, `git clone` and `git checkout revision-digital-discovery` do the same.)
 
 ## 3. Make a Python environment (once)
 
