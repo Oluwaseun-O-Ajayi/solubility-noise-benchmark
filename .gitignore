@@ -4,3 +4,4 @@ __pycache__/
 logs/
 results/parts/
 .venv/
+results/v2_logs/

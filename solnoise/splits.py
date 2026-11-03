@@ -46,3 +46,77 @@ def scaffold_split(smiles_list, seed, frac_train=0.8, frac_valid=0.1):
         else:
             test += members
     return np.array(train), np.array(valid), np.array(test)
+
+
+def butina_clusters(fingerprints, threshold=0.4, block=2048):
+    """Taylor-Butina clustering on Morgan fingerprints.
+
+    Two molecules are neighbours when their Tanimoto similarity is at least
+    ``threshold``. The molecule with the most unassigned neighbours becomes a
+    centroid and takes all of them, until every molecule is assigned. Returns a
+    cluster label per molecule. Memory stays bounded by working in row blocks.
+    """
+    from .models import tanimoto
+
+    fps = np.asarray(fingerprints, dtype=np.float32)
+    n = len(fps)
+    neighbours = []
+    for start in range(0, n, block):
+        sim = tanimoto(fps[start:start + block], fps)
+        neighbours += [np.flatnonzero(row >= threshold) for row in sim]
+    labels = np.full(n, -1)
+    counts = np.array([len(nb) for nb in neighbours])
+    cluster = 0
+    for centre in np.argsort(-counts, kind="stable"):
+        if labels[centre] != -1:
+            continue
+        members = neighbours[centre][labels[neighbours[centre]] == -1]
+        labels[members] = cluster
+        labels[centre] = cluster
+        cluster += 1
+    return labels
+
+
+def cluster_split(fingerprints, y, seed, frac_train=0.8, frac_valid=0.1, threshold=0.4,
+                  n_candidates=200, labels=None):
+    """Whole Butina clusters to train, validation or test, matched on the label mean.
+
+    Like the scaffold split, no cluster is shared between sets. Unlike it, the test
+    set is chosen among ``n_candidates`` random cluster orders as the one whose
+    mean label is closest to the training mean, so the split tests structural
+    novelty without also shifting the solubility range.
+    """
+    y = np.asarray(y, dtype=np.float64)
+    if labels is None:
+        labels = butina_clusters(fingerprints, threshold)
+    groups = [np.flatnonzero(labels == c) for c in np.unique(labels)]
+    n = len(y)
+    valid_cap = int(round(frac_valid * n))
+    test_cap = n - int(round(frac_train * n)) - valid_cap
+    big = [g for g in groups if len(g) > test_cap / 2]
+    small = [g for g in groups if len(g) <= test_cap / 2]
+    rng = np.random.default_rng(seed)
+    best, best_gap = None, np.inf
+    for _ in range(n_candidates):
+        order = rng.permutation(len(small))
+        test, valid, train = [], [], [g for g in big]
+        n_test = n_valid = 0
+        for k in order:
+            g = small[k]
+            if n_test + len(g) <= test_cap:
+                test.append(g)
+                n_test += len(g)
+            elif n_valid + len(g) <= valid_cap:
+                valid.append(g)
+                n_valid += len(g)
+            else:
+                train.append(g)
+        tr, va, te = (np.concatenate(s) if s else np.array([], int) for s in (train, valid, test))
+        if len(te) == 0 or len(tr) == 0:
+            continue
+        gap = abs(y[te].mean() - y[tr].mean())
+        if gap < best_gap:
+            best, best_gap = (np.sort(tr), np.sort(va), np.sort(te)), gap
+    if best is None:
+        raise ValueError("no cluster assignment produced a non-empty test set; lower the threshold")
+    return best

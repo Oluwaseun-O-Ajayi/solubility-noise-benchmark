@@ -24,8 +24,9 @@ class TorchRegressor:
     """
 
     def __init__(self, kind, seed=0, max_epochs=150, patience=20, batch_size=64,
-                 lr=1e-3, weight_decay=1e-5, warmup_epochs=10):
+                 lr=1e-3, weight_decay=1e-5, warmup_epochs=10, net_kwargs=None):
         self.kind, self.seed = kind, seed
+        self.net_kwargs = dict(net_kwargs or {})
         self.max_epochs, self.patience, self.batch_size = max_epochs, patience, batch_size
         self.lr, self.weight_decay, self.warmup_epochs = lr, weight_decay, warmup_epochs
         self.history = []
@@ -53,7 +54,10 @@ class TorchRegressor:
         t_train = torch.as_tensor((y_train - self.y_mean) / self.y_std, dtype=torch.float32)
         t_valid = torch.as_tensor((y_valid - self.y_mean) / self.y_std, dtype=torch.float32)
 
-        self.model = GraphNet() if self.kind == "graph" else FingerprintNet(x_train.shape[1])
+        if self.kind == "graph":
+            self.model = GraphNet(**self.net_kwargs)
+        else:
+            self.model = FingerprintNet(x_train.shape[1], **self.net_kwargs)
         optimizer = torch.optim.Adam(self.model.parameters(), lr=self.lr, weight_decay=self.weight_decay)
 
         best_loss, best_state, stale = float("inf"), None, 0

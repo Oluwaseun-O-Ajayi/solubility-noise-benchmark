@@ -1,0 +1,36 @@
+model,config,valid_rmse,valid_rmse_sd
+rf_fp,"{""n_trees"": 300, ""min_samples_leaf"": 1, ""max_features"": 1.0}",1.13282233461437,0.058278032883351726
+rf_fp,"{""n_trees"": 300, ""min_samples_leaf"": 1, ""max_features"": 0.33}",1.1133434997692369,0.053182030561165806
+rf_fp,"{""n_trees"": 300, ""min_samples_leaf"": 1, ""max_features"": ""sqrt""}",1.095449725566519,0.05576427218470346
+rf_fp,"{""n_trees"": 300, ""min_samples_leaf"": 2, ""max_features"": 1.0}",1.1509522659992306,0.08006700065239566
+rf_fp,"{""n_trees"": 300, ""min_samples_leaf"": 2, ""max_features"": 0.33}",1.1284961802952431,0.05648590439096291
+rf_fp,"{""n_trees"": 300, ""min_samples_leaf"": 2, ""max_features"": ""sqrt""}",1.3059830334383806,0.06835452995711246
+rf_fp,"{""n_trees"": 300, ""min_samples_leaf"": 5, ""max_features"": 1.0}",1.2413890662848333,0.05536547944696143
+rf_fp,"{""n_trees"": 300, ""min_samples_leaf"": 5, ""max_features"": 0.33}",1.2491309140865345,0.04246464722321873
+rf_fp,"{""n_trees"": 300, ""min_samples_leaf"": 5, ""max_features"": ""sqrt""}",1.4924731215708427,0.07678329116288411
+rf_desc,"{""n_trees"": 300, ""min_samples_leaf"": 1, ""max_features"": 1.0}",0.6776026311596975,0.03629548788053657
+rf_desc,"{""n_trees"": 300, ""min_samples_leaf"": 1, ""max_features"": 0.33}",0.658963003790199,0.04837342476915266
+rf_desc,"{""n_trees"": 300, ""min_samples_leaf"": 1, ""max_features"": ""sqrt""}",0.658963003790199,0.04837342476915266
+rf_desc,"{""n_trees"": 300, ""min_samples_leaf"": 2, ""max_features"": 1.0}",0.678803817768197,0.03861218076918174
+rf_desc,"{""n_trees"": 300, ""min_samples_leaf"": 2, ""max_features"": 0.33}",0.6618634706030098,0.048402601446034615
+rf_desc,"{""n_trees"": 300, ""min_samples_leaf"": 2, ""max_features"": ""sqrt""}",0.6618634706030098,0.048402601446034615
+rf_desc,"{""n_trees"": 300, ""min_samples_leaf"": 5, ""max_features"": 1.0}",0.7001827043147971,0.030325550604916308
+rf_desc,"{""n_trees"": 300, ""min_samples_leaf"": 5, ""max_features"": 0.33}",0.7004330062114891,0.03962494289609756
+rf_desc,"{""n_trees"": 300, ""min_samples_leaf"": 5, ""max_features"": ""sqrt""}",0.7004330062114891,0.03962494289609756
+fp_net,"{""n_members"": 1, ""net_kwargs"": {""hidden"": [256, 128], ""dropout"": 0.1}}",1.0902393319715988,0.11336138798007236
+fp_net,"{""n_members"": 1, ""net_kwargs"": {""hidden"": [256, 128], ""dropout"": 0.2}}",1.0919080021167076,0.10293058019249046
+fp_net,"{""n_members"": 1, ""net_kwargs"": {""hidden"": [256, 128], ""dropout"": 0.4}}",1.0945284055260895,0.08358773734720377
+fp_net,"{""n_members"": 1, ""net_kwargs"": {""hidden"": [512, 256], ""dropout"": 0.1}}",1.0734824752629828,0.07713236794457452
+fp_net,"{""n_members"": 1, ""net_kwargs"": {""hidden"": [512, 256], ""dropout"": 0.2}}",1.111930159292086,0.07508329495230986
+fp_net,"{""n_members"": 1, ""net_kwargs"": {""hidden"": [512, 256], ""dropout"": 0.4}}",1.0690779012640383,0.09440836348319853
+fp_net,"{""n_members"": 1, ""net_kwargs"": {""hidden"": [1024, 256], ""dropout"": 0.1}}",1.1745118833843742,0.08596398748883469
+fp_net,"{""n_members"": 1, ""net_kwargs"": {""hidden"": [1024, 256], ""dropout"": 0.2}}",1.1096758101183735,0.07734619908299765
+fp_net,"{""n_members"": 1, ""net_kwargs"": {""hidden"": [1024, 256], ""dropout"": 0.4}}",1.0798437209981933,0.066995096017712
+graph_net,"{""n_members"": 1, ""net_kwargs"": {""hidden"": 64, ""n_steps"": 3, ""dropout"": 0.1}}",0.5832600226296335,0.06317683089859275
+graph_net,"{""n_members"": 1, ""net_kwargs"": {""hidden"": 64, ""n_steps"": 3, ""dropout"": 0.2}}",0.5806792906898696,0.03551042502866452
+graph_net,"{""n_members"": 1, ""net_kwargs"": {""hidden"": 64, ""n_steps"": 4, ""dropout"": 0.1}}",0.5812176228630851,0.06597961360375351
+graph_net,"{""n_members"": 1, ""net_kwargs"": {""hidden"": 64, ""n_steps"": 4, ""dropout"": 0.2}}",0.5797751829059813,0.03220243484580887
+graph_net,"{""n_members"": 1, ""net_kwargs"": {""hidden"": 128, ""n_steps"": 3, ""dropout"": 0.1}}",0.5938699667873232,0.08727957442441697
+graph_net,"{""n_members"": 1, ""net_kwargs"": {""hidden"": 128, ""n_steps"": 3, ""dropout"": 0.2}}",0.5604573002389185,0.01987187199124674
+graph_net,"{""n_members"": 1, ""net_kwargs"": {""hidden"": 128, ""n_steps"": 4, ""dropout"": 0.1}}",0.6063235168460591,0.05291769125442169
+graph_net,"{""n_members"": 1, ""net_kwargs"": {""hidden"": 128, ""n_steps"": 4, ""dropout"": 0.2}}",0.5715766321760393,0.04725476990292511

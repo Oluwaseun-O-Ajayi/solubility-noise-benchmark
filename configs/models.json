@@ -1,0 +1,55 @@
+{
+  "_comment": "Model settings for the revised benchmark. Network and forest settings are replaced by the values selected in scripts/tune.py (see results/tuning).",
+  "default_models": [
+    "train_mean",
+    "esol_linear",
+    "gp_desc",
+    "gp_tanimoto",
+    "rf_fp",
+    "rf_desc",
+    "fp_net",
+    "graph_net"
+  ],
+  "models": {
+    "gp_desc": {},
+    "gp_tanimoto": {},
+    "rf_fp": {
+      "n_trees": 300,
+      "min_samples_leaf": 1,
+      "max_features": "sqrt"
+    },
+    "rf_desc": {
+      "n_trees": 300,
+      "min_samples_leaf": 1,
+      "max_features": 0.33
+    },
+    "fp_net": {
+      "n_members": 5,
+      "net_kwargs": {
+        "hidden": [
+          512,
+          256
+        ],
+        "dropout": 0.4
+      }
+    },
+    "graph_net": {
+      "n_members": 5,
+      "net_kwargs": {
+        "hidden": 128,
+        "n_steps": 3,
+        "dropout": 0.2
+      }
+    }
+  },
+  "dataset_overrides": {
+    "aqsoldb": {
+      "gp_desc": {
+        "max_train": 4000
+      },
+      "gp_tanimoto": {
+        "max_train": 4000
+      }
+    }
+  }
+}
