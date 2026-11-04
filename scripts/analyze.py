@@ -198,9 +198,11 @@ def fig_error_calibration(preds, dataset="esol", levels=(0.0, 1.0)):
     save(fig, "fig4_error_calibration")
 
 
-def fig_similarity(preds, dataset="esol", level=0.0):
+def fig_similarity(preds, dataset="esol", level=0.0, split="scaffold", name="fig5_similarity"):
     models = ["gp_desc", "gp_tanimoto", "rf_desc", "rf_fp", "fp_net", "graph_net"]
     p = preds[(preds.dataset == dataset) & (preds.level == level) & (preds.noise_type == "gaussian")]
+    if split is not None:
+        p = p[p.split == split]
     edges = np.array([0.0, 0.3, 0.4, 0.5, 0.6, 0.8, 1.01])
     centres = (edges[:-1] + edges[1:]) / 2
     fig, axes = plt.subplots(1, 2, figsize=(5.4, 2.3), sharey=False)
@@ -224,7 +226,7 @@ def fig_similarity(preds, dataset="esol", level=0.0):
         ax.set_xlabel("Tanimoto similarity to nearest training molecule")
     axes[0].legend(frameon=False, fontsize=6)
     fig.tight_layout()
-    save(fig, "fig5_similarity")
+    save(fig, name)
 
 
 def fig_gp_noise(m, datasets=("esol", "aqsoldb")):
@@ -273,6 +275,8 @@ def main(out="results/v2"):
     fig_coverage_model(s)
     fig_error_calibration(preds)
     fig_similarity(preds)
+    for sp in ("random", "cluster"):
+        fig_similarity(preds, split=sp, name=f"figS_similarity_{sp}")
     fig_gp_noise(m)
     print(f"{len(m)} rows; summary, paired differences and figures written")
 
