@@ -32,6 +32,7 @@ MARKER = {"train_mean": "", "esol_linear": "s", "gp_desc": "o", "gp_tanimoto": "
           "rf_fp": "^", "fp_net": "D", "graph_net": "D"}
 SPLITS = ["random", "cluster", "scaffold"]
 SPLIT_LABEL = {"random": "Random split", "scaffold": "Scaffold split", "cluster": "Cluster split"}
+DATASET_LABEL = {"esol": "ESOL", "aqsoldb": "AqSolDB"}
 
 plt.rcParams.update({
     "font.family": "DejaVu Sans", "font.size": 7, "axes.labelsize": 7, "axes.titlesize": 7.5,
@@ -211,23 +212,29 @@ def fig_similarity(preds, dataset="esol", level=0.0):
     save(fig, "fig5_similarity")
 
 
-def fig_gp_noise(m, dataset="esol"):
-    sub = m[(m.dataset == dataset) & (m.noise_type == "gaussian") & m.model.isin(["gp_desc", "gp_tanimoto"])]
-    if sub.empty:
+def fig_gp_noise(m, datasets=("esol", "aqsoldb")):
+    sub = m[(m.noise_type == "gaussian") & m.model.isin(["gp_desc", "gp_tanimoto"])]
+    datasets = [d for d in datasets if not sub[sub.dataset == d].empty]
+    if not datasets:
         return
-    fig, ax = plt.subplots(figsize=(2.9, 2.5))
-    base = sub[sub.level == 0].groupby(["model", "split"]).fitted_noise_var.mean()
-    for (model, sp), g in sub.groupby(["model", "split"]):
-        g = g.groupby("level").fitted_noise_var.mean().reset_index()
-        implied = np.sqrt(np.clip(g.fitted_noise_var - base.loc[(model, sp)], 0, None))
-        ax.plot(g.level, implied, color=COLOR[model], ls=STYLE[model],
-                marker={"random": "o", "scaffold": "s", "cluster": "^"}[sp], ms=3.5,
-                label=f"{LABEL[model]}, {sp}")
-    lim = sub.level.max() * 1.05
-    ax.plot([0, lim], [0, lim], color="black", lw=0.6, ls=(0, (4, 3)))
-    ax.set_xlabel("Injected noise σ (log units)")
-    ax.set_ylabel("Noise recovered by GP (log units)")
-    ax.legend(frameon=False, fontsize=5.5)
+    fig, axes = plt.subplots(1, len(datasets), figsize=(3.2 * len(datasets), 2.6), squeeze=False)
+    for ax, ds in zip(axes[0], datasets):
+        d = sub[sub.dataset == ds]
+        base = d[d.level == 0].groupby(["model", "split"]).fitted_noise_var.mean()
+        for (model, sp), g in d.groupby(["model", "split"]):
+            g = g.groupby("level").fitted_noise_var.mean().reset_index()
+            implied = np.sqrt(np.clip(g.fitted_noise_var - base.loc[(model, sp)], 0, None))
+            ax.plot(g.level, implied, color=COLOR[model], ls=STYLE[model],
+                    marker={"random": "o", "scaffold": "s", "cluster": "^"}[sp], ms=3.5,
+                    label=f"{LABEL[model]}, {SPLIT_LABEL[sp].split()[0].lower()}")
+        lim = d.level.max() * 1.05
+        ax.plot([0, lim], [0, lim], color="black", lw=0.6, ls=(0, (4, 3)))
+        ax.set_xlabel("Injected noise σ (log units)")
+        ax.set_title(DATASET_LABEL.get(ds, ds))
+    axes[0][0].set_ylabel("Noise recovered by GP (log units)")
+    handles, labels = axes[0][0].get_legend_handles_labels()
+    fig.tight_layout(rect=(0, 0.2, 1, 1))
+    fig.legend(handles, labels, loc="lower center", ncol=3, frameon=False, bbox_to_anchor=(0.5, 0.0))
     save(fig, "fig6_gp_noise")
 
 
