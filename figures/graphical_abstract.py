@@ -7,17 +7,20 @@ Right: under label shift, predicted uncertainty stops tracking error.
 from pathlib import Path
 
 import matplotlib
-import matplotlib.pyplot as plt
-import pandas as pd
 
 matplotlib.use("Agg")
+
+import matplotlib.pyplot as plt  # noqa: E402
+import pandas as pd  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "figures" / "v2"
 CM = 1 / 2.54
 
 BLUE, PINK, GREY, ORANGE = "#0072B2", "#CC79A7", "#999999", "#E69F00"
-MODELS = ["gp_desc", "gp_tanimoto", "rf_desc", "rf_fp", "fp_net", "graph_net"]
+MODELS = ["esol_linear", "gp_desc", "gp_tanimoto", "rf_desc", "rf_fp", "fp_net", "graph_net"]
+RANK_FP = ["gp_tanimoto", "rf_fp", "fp_net"]
+RANK_DESC = ["gp_desc", "rf_desc", "graph_net"]
 
 plt.rcParams.update({
     "font.size": 5.6, "axes.labelsize": 5.8, "axes.titlesize": 6.2,
@@ -56,8 +59,7 @@ def main():
     # ---- right: ranking of errors by confidence, by split
     d = m[(m.noise_type == "gaussian") & (m.level == 0) & (m.dataset == "esol")]
     splits = ["random", "cluster", "scaffold"]
-    fp = ["gp_tanimoto", "rf_fp", "fp_net"]
-    desc = ["gp_desc", "rf_desc", "graph_net"]
+    fp, desc = RANK_FP, RANK_DESC
     ax = axes[1]
     x = range(len(splits))
     for models, color, label in [(desc, BLUE, "descriptors / graph"),

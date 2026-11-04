@@ -37,8 +37,8 @@ def load_aqsoldb(path=None, verify=True):
     single-source compounds) and ``group`` (reliability group G1 to G5).
 
     Curation, applied in this order and counted in ``frame.attrs["curation"]``:
-    unparseable SMILES are dropped; multi-component entries (salts, mixtures,
-    hydrates) are dropped; molecules containing elements outside common organic
+    multi-component entries (salts, mixtures, hydrates) are dropped; unparseable
+    SMILES are dropped; molecules containing elements outside common organic
     chemistry (metals, for example) are dropped; molecules with fewer than two
     heavy atoms are dropped; SMILES are canonicalized without stereochemistry and,
     where two entries collapse to one structure, the first is kept.

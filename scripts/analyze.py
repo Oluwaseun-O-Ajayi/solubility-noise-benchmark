@@ -115,22 +115,37 @@ def line_panels(s, dataset, metric, ylabel, name, models=MODELS, reference=None,
 
 def fig_coverage_model(s, dataset="esol"):
     """Observed one-sigma coverage against the prediction 2*Phi(sqrt(RMSE^2+sigma^2)/RMSE)-1."""
-    sub = s[(s.dataset == dataset) & (s.noise_type == "gaussian") & (s.split == "random")]
-    models = ["gp_desc", "gp_tanimoto", "fp_net", "graph_net"]
+    models = ["esol_linear", "gp_desc", "gp_tanimoto", "rf_desc", "rf_fp", "fp_net", "graph_net"]
     fig, axes = plt.subplots(1, 2, figsize=(5.0, 2.3))
+
+    # panel a: every model, split and data set
     ax = axes[0]
-    for model in models:
-        d = sub[sub.model == model].sort_values("level")
-        if d.empty:
+    allm = s[(s.noise_type == "gaussian") & s.model.isin(models)]
+    panel_marker = {"esol_linear": "P", "gp_desc": "o", "gp_tanimoto": "v", "rf_desc": "^",
+                    "rf_fp": "s", "fp_net": "D", "graph_net": "d"}
+    seen = set()
+    for (ds, sp, model), d in allm.groupby(["dataset", "split", "model"]):
+        d = d.sort_values("level")
+        base = d[d.level == 0]
+        if base.empty:
             continue
-        pred = 2 * norm.cdf(np.sqrt(d.rmse ** 2 + d.level ** 2) / d.rmse) - 1
-        ax.plot(pred, d.cov68_total, color=COLOR[model], ls="none", marker=MARKER[model], ms=4,
-                mfc="white" if STYLE[model] == "--" else COLOR[model], label=LABEL[model])
-    ax.plot([0.6, 1.0], [0.6, 1.0], color="black", lw=0.6, ls=(0, (4, 3)))
+        r0 = float(base.rmse.iloc[0])
+        d = d[d.level > 0]
+        pred = 2 * norm.cdf(np.sqrt(r0 ** 2 + d.level ** 2) / r0) - 1
+        ax.plot(pred, d.cov68_total, color=COLOR[model], ls="none", marker=panel_marker[model], ms=3,
+                mfc="white" if ds == "aqsoldb" else COLOR[model], mew=0.6, alpha=0.9,
+                label=LABEL[model] if model not in seen else None)
+        seen.add(model)
+    lo = 0.65
+    ax.plot([lo, 1.0], [lo, 1.0], color="black", lw=0.6, ls=(0, (4, 3)))
     ax.set_xlabel("Predicted coverage, one-line model")
     ax.set_ylabel("Observed one-sigma coverage")
-    ax.set_title("a  Total interval vs reported labels", loc="left")
-    ax.legend(frameon=False, loc="upper left")
+    ax.set_title("a  All models, splits, both data sets", loc="left")
+    ax.legend(frameon=False, loc="upper left", fontsize=5, ncol=2, handletextpad=0.3,
+              columnspacing=0.8, labelspacing=0.25)
+
+    sub = s[(s.dataset == dataset) & (s.noise_type == "gaussian") & (s.split == "random")]
+    models = ["gp_desc", "gp_tanimoto", "fp_net", "graph_net"]
     ax = axes[1]
     for model in models:
         d = sub[sub.model == model].sort_values("level")
