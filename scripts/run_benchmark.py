@@ -21,7 +21,7 @@ from solnoise.benchmark import condition_tag, load_config, run_condition  # noqa
 def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--dataset", choices=["esol", "aqsoldb"])
-    p.add_argument("--split", choices=["random", "scaffold", "cluster"])
+    p.add_argument("--split", choices=["random", "scaffold", "cluster", "cluster_unmatched"])
     p.add_argument("--noise", choices=["gaussian", "outlier"], default="gaussian")
     p.add_argument("--level", type=float)
     p.add_argument("--seed", type=int)

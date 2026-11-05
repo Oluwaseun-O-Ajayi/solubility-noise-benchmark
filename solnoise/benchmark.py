@@ -72,6 +72,11 @@ def make_split(data, split, seed):
         return scaffold_split(data.smiles, seed)
     if split == "cluster":
         return cluster_split(data.fingerprints, data.y, seed, labels=data.clusters)
+    if split == "cluster_unmatched":
+        # Sensitivity control for the cluster split: take the first random cluster
+        # ordering instead of the one whose test mean label is closest to the
+        # training mean, so no test label is read when forming the split.
+        return cluster_split(data.fingerprints, data.y, seed, labels=data.clusters, n_candidates=1)
     raise ValueError(f"unknown split: {split}")
 
 

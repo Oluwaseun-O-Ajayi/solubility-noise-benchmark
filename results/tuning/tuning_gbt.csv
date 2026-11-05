@@ -1,0 +1,17 @@
+model,config,valid_rmse,valid_rmse_sd
+gbt_desc,"{""n_members"": 1, ""max_iter"": 200, ""learning_rate"": 0.05, ""max_leaf_nodes"": 15}",0.655478977682817,0.041111593787724714
+gbt_desc,"{""n_members"": 1, ""max_iter"": 200, ""learning_rate"": 0.05, ""max_leaf_nodes"": 31}",0.6449691117717443,0.06084177422972047
+gbt_desc,"{""n_members"": 1, ""max_iter"": 200, ""learning_rate"": 0.1, ""max_leaf_nodes"": 15}",0.6506192826263894,0.03042800200207374
+gbt_desc,"{""n_members"": 1, ""max_iter"": 200, ""learning_rate"": 0.1, ""max_leaf_nodes"": 31}",0.6455304694425199,0.05865816717136913
+gbt_desc,"{""n_members"": 1, ""max_iter"": 400, ""learning_rate"": 0.05, ""max_leaf_nodes"": 15}",0.6485174283593639,0.037233099917870036
+gbt_desc,"{""n_members"": 1, ""max_iter"": 400, ""learning_rate"": 0.05, ""max_leaf_nodes"": 31}",0.649971108704913,0.05109127305585993
+gbt_desc,"{""n_members"": 1, ""max_iter"": 400, ""learning_rate"": 0.1, ""max_leaf_nodes"": 15}",0.654551032208354,0.023047855567280586
+gbt_desc,"{""n_members"": 1, ""max_iter"": 400, ""learning_rate"": 0.1, ""max_leaf_nodes"": 31}",0.653205198761918,0.054287588446136646
+gbt_fp,"{""n_members"": 1, ""max_iter"": 200, ""learning_rate"": 0.05, ""max_leaf_nodes"": 15}",1.1481712858277417,0.04639919553305466
+gbt_fp,"{""n_members"": 1, ""max_iter"": 200, ""learning_rate"": 0.05, ""max_leaf_nodes"": 31}",1.1407744178987023,0.04921525044247982
+gbt_fp,"{""n_members"": 1, ""max_iter"": 200, ""learning_rate"": 0.1, ""max_leaf_nodes"": 15}",1.1206724033646516,0.05495990268935216
+gbt_fp,"{""n_members"": 1, ""max_iter"": 200, ""learning_rate"": 0.1, ""max_leaf_nodes"": 31}",1.1052412383421357,0.042337535801879086
+gbt_fp,"{""n_members"": 1, ""max_iter"": 400, ""learning_rate"": 0.05, ""max_leaf_nodes"": 15}",1.1118721230356778,0.044763968168568306
+gbt_fp,"{""n_members"": 1, ""max_iter"": 400, ""learning_rate"": 0.05, ""max_leaf_nodes"": 31}",1.1060028296902737,0.054091780693167286
+gbt_fp,"{""n_members"": 1, ""max_iter"": 400, ""learning_rate"": 0.1, ""max_leaf_nodes"": 15}",1.0994549063510368,0.06283825728408463
+gbt_fp,"{""n_members"": 1, ""max_iter"": 400, ""learning_rate"": 0.1, ""max_leaf_nodes"": 31}",1.0992412923053547,0.05100024354597409
