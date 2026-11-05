@@ -39,7 +39,7 @@ The benchmark provides:
 - **Eight models**, arranged so that model class and input representation can be separated: Gaussian processes and random forests each on descriptors and on Morgan fingerprints, deep ensembles on fingerprints and on molecular graphs, and two baselines.
 - **Two data sets**: ESOL (1,128 compounds) and a curated subset of AqSolDB (8,489 compounds).
 - **Three splits**: random, Bemis-Murcko scaffold, and a label-matched Taylor-Butina cluster split that reproduces the structural novelty of a scaffold split without its shift in the target distribution.
-- **Two noise models**: Gaussian at five levels and outlier corruption at three rates.
+- **Two noise models**: Gaussian at five levels and outlier corruption at three rates on ESOL; three and one on AqSolDB.
 - **Uncertainty evaluation**: coverage at two nominal levels against both the reported labels and an independent noisy copy of them, negative log-likelihood, miscalibration area, error-based calibration with ENCE, rank correlation against a simulated reference, variance scaling and normalized split-conformal recalibration.
 - **10 seeds per ESOL condition and 5 per AqSolDB condition**, reported as means with 95% bootstrap confidence intervals.
 
@@ -47,12 +47,12 @@ The benchmark provides:
 
 ## Key findings
 
-1. **Input representation changes accuracy more than model class.** Paired within seeds on clean labels, descriptors beat Morgan fingerprints for the same random forest by 0.31 to 0.84 log units, and every one of the 36 paired intervals excludes zero. The same ordering holds for the Gaussian processes and the deep ensembles.
+1. **Input representation changes accuracy more than model class.** Paired within seeds on clean labels, descriptors beat Morgan fingerprints for the same random forest by 0.31 to 0.84 log units across the six data set and split combinations. Over all noise levels the range is 0.25 to 0.85, and every one of the 36 paired intervals excludes zero. The same ordering holds for the Gaussian processes and the deep ensembles.
 2. **Predictive intervals are calibrated for a new measurement, not for the reported value.** Coverage of the reported test labels rises well above nominal as training labels get noisier. Scored against an independent noisy copy of the test labels, 95% coverage stays between 0.917 and 0.938 at every noise level, and a closed-form expression reproduces the apparent excess.
 3. **Distribution shift breaks uncertainty in a way recalibration does not repair.** Under scaffold splitting on ESOL, the fingerprint ensemble's uncertainty correlates negatively with its error, because its error stops falling as test molecules become more similar to the training set while its predicted uncertainty keeps falling. Variance scaling and conformal correction restore interval width but leave the ordering untouched.
 4. **A Gaussian process recovers the amount of noise that was added**, to within 0.09 log units for sigma at or above 0.6, and the noise it fits to unaltered labels is an upper bound on the error in the data as supplied.
 5. **Aleatoric and epistemic components are not comparable across model families.** Epistemic-only coverage spans 0.04 to 0.97 across models, which reflects how each model is parameterized rather than a quantity the models share.
-6. **Measured inter-source disagreement predicts model error and models do not detect it.** For AqSolDB compounds reported by several sources, those with above-median disagreement are harder to predict, yet the models' aleatoric estimates track that disagreement with rank correlations of 0.02 to 0.25.
+6. **Measured inter-source disagreement predicts model error and models do not detect it.** For AqSolDB compounds reported by several sources, those with above-median disagreement are harder to predict, yet the aleatoric estimates of the four non-baseline models that report one track that disagreement with rank correlations of 0.02 to 0.25.
 
 Full results are in `results/v2/`, and the figures that summarize them in `figures/v2/`.
 
@@ -134,7 +134,7 @@ python scripts/analyze.py                         # summary tables, paired compa
 ### One condition
 
 ```bash
-python scripts/run_benchmark.py --dataset esol --split scaffold --noise-type gaussian \
+python scripts/run_benchmark.py --dataset esol --split scaffold --noise gaussian \
     --level 1.0 --seed 0 --threads 1 --out results/v2
 ```
 
@@ -170,6 +170,7 @@ solubility-noise-benchmark/
 ├── scripts/
 │   ├── make_grid.py     run_benchmark.py   run_local.sh
 │   ├── collect.py       analyze.py         tune.py
+│   ├── figures/         # Per-figure scripts
 │   └── run_experiments.py  summarize.py    gp_diagnostic.py
 ├── configs/models.json  # One fixed configuration per model
 ├── grids/               # Condition lists for the full grid
