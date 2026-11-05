@@ -22,7 +22,20 @@ def main():
     aqsol = grid("aqsoldb", ["random", "scaffold", "cluster"], [0.0, 0.6, 1.0], [0.1], range(5))
     esol.to_csv(OUT / "esol.csv", index=False)
     aqsol.to_csv(OUT / "aqsoldb.csv", index=False)
-    print(f"esol: {len(esol)} tasks, aqsoldb: {len(aqsol)} tasks")
+
+    # Sensitivity control: the cluster split without label matching, both data sets.
+    unmatched = pd.concat([
+        grid("esol", ["cluster_unmatched"], [0.0, 0.3, 0.6, 1.0, 2.0], [0.05, 0.1, 0.2], range(10)),
+        grid("aqsoldb", ["cluster_unmatched"], [0.0, 0.6, 1.0], [0.1], range(5)),
+    ], ignore_index=True)
+    unmatched.to_csv(OUT / "cluster_unmatched.csv", index=False)
+
+    # The two gradient-boosting models across every condition of the main grid.
+    gbt = pd.concat([esol, aqsol], ignore_index=True)
+    gbt.to_csv(OUT / "gbt.csv", index=False)
+
+    print(f"esol: {len(esol)} tasks, aqsoldb: {len(aqsol)} tasks, "
+          f"cluster_unmatched: {len(unmatched)} tasks, gbt: {len(gbt)} tasks")
 
 
 if __name__ == "__main__":

@@ -4,7 +4,8 @@ import numpy as np
 import pytest
 
 from solnoise.features import descriptor_matrix, fingerprint_matrix
-from solnoise.models import ESOLLinear, RandomForest, TanimotoGP, TrainMean, tanimoto
+from solnoise.models import (ESOLLinear, GradientBoosting, RandomForest, TanimotoGP, TrainMean,
+                             tanimoto)
 from solnoise.noise import add_outlier_noise, corrupt
 from solnoise.splits import butina_clusters, cluster_split
 from solnoise.uq_metrics import (conformal_quantile, coverage, error_based_calibration, gaussian_nll,
@@ -124,3 +125,27 @@ def test_tanimoto_gp_interpolates_training_points_when_noise_is_small():
     mu, var_epi, _ = model.predict(x)
     assert np.sqrt(np.mean((mu - y) ** 2)) < 0.5 * np.std(y)
     assert np.all(var_epi < model.amp * model.y_std ** 2)
+
+
+def test_gradient_boosting_separates_noise_from_model_uncertainty():
+    rng = np.random.default_rng(0)
+    x = rng.normal(size=(400, 5))
+    y = 2 * x[:, 0] - x[:, 1] + rng.normal(0, 0.5, 400)
+    model = GradientBoosting(0, n_members=3, max_iter=100).fit(x[:320], y[:320])
+    mu, var_epi, var_ale = model.predict(x[320:])
+    assert mu.shape == var_epi.shape == var_ale.shape == (80,)
+    assert np.all(var_epi >= 0) and np.all(var_ale > 0)
+    # the quantile width should be the right order for noise of sd 0.5
+    assert 0.2 < np.sqrt(var_ale).mean() < 1.2
+
+
+def test_unmatched_cluster_split_does_not_match_labels():
+    fps = fingerprint_matrix(SMILES * 3)
+    y = np.linspace(-4, 1, len(fps))
+    labels = butina_clusters(fps, threshold=0.9)
+    matched = cluster_split(fps, y, seed=0, labels=labels, n_candidates=20)
+    unmatched = cluster_split(fps, y, seed=0, labels=labels, n_candidates=1)
+    for part in (matched, unmatched):
+        assert sorted(np.concatenate(part)) == list(range(len(fps)))
+    gap = lambda s: abs(y[s[2]].mean() - y[s[0]].mean())
+    assert gap(matched) <= gap(unmatched) + 1e-9

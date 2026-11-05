@@ -12,7 +12,7 @@ import warnings
 import numpy as np
 from scipy.linalg import cho_factor, cho_solve, solve_triangular
 from scipy.optimize import minimize
-from sklearn.ensemble import RandomForestRegressor
+from sklearn.ensemble import HistGradientBoostingRegressor, RandomForestRegressor
 from sklearn.exceptions import ConvergenceWarning
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF, ConstantKernel, WhiteKernel
@@ -188,6 +188,59 @@ class RandomForest:
         return per_tree.mean(0), per_tree.var(0), np.zeros(len(x))
 
 
+class GradientBoosting:
+    """Gradient-boosted trees with a quantile-loss uncertainty estimate.
+
+    Gradient boosting gives no predictive variance of its own, so one is built
+    the way the rest of the benchmark defines it. ``n_members`` models are fitted
+    on bootstrap resamples of the training set: the spread of their mean
+    predictions is the epistemic part. Each member also fits the 0.1587 and
+    0.8413 conditional quantiles, whose half-separation is a one-sigma width for
+    Gaussian residuals; the mean of those widths, squared, is the aleatoric part.
+    Using only scikit-learn keeps the dependency set unchanged.
+    """
+
+    Q_LO, Q_HI = 0.15865525393145707, 0.8413447460685429
+
+    def __init__(self, seed=0, n_members=5, max_iter=300, learning_rate=0.1,
+                 max_leaf_nodes=31, min_samples_leaf=20, l2_regularization=0.0):
+        self.seed = seed
+        self.n_members = n_members
+        self.kwargs = dict(max_iter=max_iter, learning_rate=learning_rate,
+                           max_leaf_nodes=max_leaf_nodes, min_samples_leaf=min_samples_leaf,
+                           l2_regularization=l2_regularization, early_stopping=False)
+        self.members = []
+
+    def _make(self, loss, quantile, seed):
+        kw = dict(self.kwargs, loss=loss, random_state=seed)
+        if quantile is not None:
+            kw["quantile"] = quantile
+        return HistGradientBoostingRegressor(**kw)
+
+    def fit(self, x_train, y_train, x_valid=None, y_valid=None):
+        x_train = np.asarray(x_train, dtype=np.float64)
+        y_train = np.asarray(y_train, dtype=np.float64)
+        n = len(y_train)
+        rng = np.random.default_rng(self.seed)
+        self.members = []
+        for m in range(self.n_members):
+            idx = np.arange(n) if m == 0 else rng.choice(n, size=n, replace=True)
+            xb, yb = x_train[idx], y_train[idx]
+            mean_model = self._make("squared_error", None, self.seed + m).fit(xb, yb)
+            lo = self._make("quantile", self.Q_LO, self.seed + m).fit(xb, yb)
+            hi = self._make("quantile", self.Q_HI, self.seed + m).fit(xb, yb)
+            self.members.append((mean_model, lo, hi))
+        return self
+
+    def predict(self, x):
+        x = np.asarray(x, dtype=np.float64)
+        means = np.stack([m.predict(x) for m, _, _ in self.members])
+        widths = np.stack([(h.predict(x) - l.predict(x)) / 2.0 for _, l, h in self.members])
+        sigma_ale = np.clip(widths.mean(0), 1e-6, None)
+        var_epi = means.var(0) if len(means) > 1 else np.zeros(x.shape[0])
+        return means.mean(0), var_epi, sigma_ale ** 2
+
+
 class Ensemble:
     """Deep ensemble wrapper that keeps the aleatoric and epistemic parts separate."""
 
@@ -212,6 +265,8 @@ REGISTRY = {
     "gp_tanimoto": ("fingerprints", lambda seed, cfg: TanimotoGP(seed, **cfg)),
     "rf_fp": ("fingerprints", lambda seed, cfg: RandomForest(seed, **cfg)),
     "rf_desc": ("descriptors", lambda seed, cfg: RandomForest(seed, **cfg)),
+    "gbt_desc": ("descriptors", lambda seed, cfg: GradientBoosting(seed, **cfg)),
+    "gbt_fp": ("fingerprints", lambda seed, cfg: GradientBoosting(seed, **cfg)),
     "fp_net": ("fingerprints", lambda seed, cfg: Ensemble("fingerprint", seed=seed, **cfg)),
     "graph_net": ("graphs", lambda seed, cfg: Ensemble("graph", seed=seed, **cfg)),
 }
