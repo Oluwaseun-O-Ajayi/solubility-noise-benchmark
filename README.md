@@ -15,13 +15,13 @@
 
 This software is archived on Zenodo for long-term preservation and citation.
 
-**Current version:** 1.0.0
+**Current version:** 1.0.1
 
 **DOI (all versions):** https://doi.org/10.5281/zenodo.23308184
 
-**DOI (v1.0.0):** https://doi.org/10.5281/zenodo.23966461
+This concept DOI always resolves to the most recent release. Each release also has its own version DOI, shown on its Zenodo record under "Versions".
 
-Version 1.0.0 is the release that accompanies the manuscript. Earlier releases (0.1.x) cover an ESOL-only study with four models and two splits, and their results are superseded.
+Releases 1.0.x accompany the manuscript. Earlier releases (0.1.x) cover an ESOL-only study with four models and two splits, and their results are superseded.
 
 ---
 
@@ -222,10 +222,10 @@ If you use this software, cite the archived version:
 @software{ajayi_solubility_noise_benchmark_2026,
   author    = {Ajayi, Oluwaseun O.},
   title     = {Solubility Noise Benchmark: label noise and distribution shift in aqueous solubility models},
-  version   = {1.0.0},
+  version   = {1.0.1},
   year      = {2026},
   publisher = {Zenodo},
-  doi       = {10.5281/zenodo.23966461},
+  doi       = {10.5281/zenodo.23308184},
   url       = {https://github.com/Oluwaseun-O-Ajayi/solubility-noise-benchmark}
 }
 ```
