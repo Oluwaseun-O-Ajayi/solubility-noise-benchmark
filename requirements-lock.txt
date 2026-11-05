@@ -1,0 +1,12 @@
+# Exact package versions resolved on the University of Georgia Sapelo2 cluster
+# for the published run (Python 3.11.5). Install with:
+#     pip install -r requirements-lock.txt
+# Use requirements.txt instead if you want the latest compatible versions.
+numpy==2.4.6
+scipy==1.17.1
+pandas==3.1.0
+matplotlib==3.11.2
+scikit-learn==1.9.1
+rdkit==2026.09.1
+torch==2.15.0
+pytest==9.2.0
