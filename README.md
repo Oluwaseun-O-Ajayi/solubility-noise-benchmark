@@ -1,8 +1,8 @@
 # Solubility Noise Benchmark
 
-**Open-source benchmark of molecular property models under label noise and scaffold shift**
+**Label noise and distribution shift in aqueous solubility models**
 
-**The repository compares a Gaussian process, a random forest, a fingerprint neural network, and a message-passing graph neural network for aqueous solubility prediction, measuring accuracy and the reliability of predicted uncertainty as training labels are deliberately corrupted with noise.**
+**This repository measures how much the accuracy and the reported uncertainty of molecular property models degrade when training labels carry error, and separates that effect from the effect of structural novelty and of a shift in the target distribution. Two data sets, three splits, two noise models, eight models, 300 conditions and 2,400 model fits.**
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23308184.svg)](https://doi.org/10.5281/zenodo.23308184)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
@@ -11,247 +11,181 @@
 
 ---
 
-## DOI and Archival Record
+## DOI and archival record
 
-This software is archived on Zenodo to support long-term preservation, reproducibility, and scholarly citation.
+This software is archived on Zenodo for long-term preservation and citation.
 
-**Current Version:** 0.1.2
+**Current version:** 1.0.0
 
 **DOI (all versions):** https://doi.org/10.5281/zenodo.23308184
 
-**DOI (v0.1.1):** https://doi.org/10.5281/zenodo.23308185
+**DOI (v1.0.0):** https://doi.org/10.5281/zenodo.23966461
+
+Version 1.0.0 is the release that accompanies the manuscript. Earlier releases (0.1.x) cover an ESOL-only study with four models and two splits, and their results are superseded.
 
 ---
 
 ## Overview
 
-Experimental property data used to train molecular machine learning models contain measurement error. This repository asks two practical questions:
+Experimental property data used to train molecular machine learning models contain measurement error, yet benchmarks usually treat reported values as exact. This repository asks four questions:
 
-- How much does predictive accuracy degrade as the error in training labels increases?
-- Do the uncertainty estimates reported by each model remain trustworthy under that error?
+1. How much does accuracy degrade with label noise, and how does that compare with the effect of structural novelty and of a shift in the label distribution?
+2. How does the coverage of predictive intervals change with label noise, and can the change be predicted?
+3. Does predicted uncertainty track error on unfamiliar chemistry, and does any failure track the model or the input representation?
+4. Does recalibration on a held-out set repair the intervals?
 
-The benchmark integrates:
+The benchmark provides:
 
-- **Four model classes** spanning classical and deep learning approaches
-- **Two data splits**: random, and Bemis-Murcko scaffold
-- **Controlled label noise** at five levels, from none to as large as the spread of the dataset
-- **Uncertainty evaluation** by interval coverage and by rank correlation with error
-- **Three random seeds** per condition, with results reported as mean ± standard deviation
-
-All experiments use the ESOL aqueous solubility dataset (1,128 compounds; Delaney, 2004).
-
----
-
-## Key Findings
-
-1. **Random label noise has a modest effect on accuracy.** On the random split, adding noise with a standard deviation of 1.0 log unit raised the graph network's test RMSE from 0.57 to 0.72. At 2.0 log units, the size of the dataset's full spread, every model still outperformed the training-mean baseline.
-2. **Scaffold shift causes more damage than label noise.** On the scaffold split, the fingerprint-based models rose from about 1.15 to above 2.0 RMSE. The graph network held at 0.72.
-3. **Models trained on noisy labels become underconfident relative to the truth.** Models that learn a noise term include it in their predictive intervals, which become too wide when evaluated against clean values. One-sigma coverage reached 0.98 at the highest noise level, against a target of 0.68.
-4. **Fingerprint models fail silently on unseen scaffolds.** Their intervals covered the true value about 40% of the time, and their predicted uncertainty was negatively correlated with actual error.
+- **Eight models**, arranged so that model class and input representation can be separated: Gaussian processes and random forests each on descriptors and on Morgan fingerprints, deep ensembles on fingerprints and on molecular graphs, and two baselines.
+- **Two data sets**: ESOL (1,128 compounds) and a curated subset of AqSolDB (8,489 compounds).
+- **Three splits**: random, Bemis-Murcko scaffold, and a label-matched Taylor-Butina cluster split that reproduces the structural novelty of a scaffold split without its shift in the target distribution.
+- **Two noise models**: Gaussian at five levels and outlier corruption at three rates.
+- **Uncertainty evaluation**: coverage at two nominal levels against both the reported labels and an independent noisy copy of them, negative log-likelihood, miscalibration area, error-based calibration with ENCE, rank correlation against a simulated reference, variance scaling and normalized split-conformal recalibration.
+- **10 seeds per ESOL condition and 5 per AqSolDB condition**, reported as means with 95% bootstrap confidence intervals.
 
 ---
 
-## Scope and Limitations
+## Key findings
 
-This repository is a controlled benchmark on a single public dataset. It is intended for research, education, and methodological comparison.
+1. **Input representation changes accuracy more than model class.** Paired within seeds on clean labels, descriptors beat Morgan fingerprints for the same random forest by 0.31 to 0.84 log units, and every one of the 36 paired intervals excludes zero. The same ordering holds for the Gaussian processes and the deep ensembles.
+2. **Predictive intervals are calibrated for a new measurement, not for the reported value.** Coverage of the reported test labels rises well above nominal as training labels get noisier. Scored against an independent noisy copy of the test labels, 95% coverage stays between 0.917 and 0.938 at every noise level, and a closed-form expression reproduces the apparent excess.
+3. **Distribution shift breaks uncertainty in a way recalibration does not repair.** Under scaffold splitting on ESOL, the fingerprint ensemble's uncertainty correlates negatively with its error, because its error stops falling as test molecules become more similar to the training set while its predicted uncertainty keeps falling. Variance scaling and conformal correction restore interval width but leave the ordering untouched.
+4. **A Gaussian process recovers the amount of noise that was added**, to within 0.09 log units for sigma at or above 0.6, and the noise it fits to unaltered labels is an upper bound on the error in the data as supplied.
+5. **Aleatoric and epistemic components are not comparable across model families.** Epistemic-only coverage spans 0.04 to 0.97 across models, which reflects how each model is parameterized rather than a quantity the models share.
+6. **Measured inter-source disagreement predicts model error and models do not detect it.** For AqSolDB compounds reported by several sources, those with above-median disagreement are harder to predict, yet the models' aleatoric estimates track that disagreement with rank correlations of 0.02 to 0.25.
 
-- One dataset of 1,128 compounds and three random seeds per condition.
-- The ESOL values already contain measurement error. "Noise 0" means no added noise, not noise-free labels.
-- Added noise is Gaussian and independent of the molecule. Real assay error can be systematic or depend on the property range.
-- No hyperparameter search was performed. Each model uses a single fixed configuration.
-- Each model is paired with its conventional input representation, so the comparison combines the effect of the model and of the representation.
-- Results were generated with one PyTorch CPU thread (`--threads 1`). Different thread counts change the order of floating-point operations and shift the neural network results slightly. In a spot check, the graph network moved from 0.54 to 0.57 RMSE on one condition, within the seed-to-seed spread.
+Full results are in `results/v2/`, and the figures that summarize them in `figures/v2/`.
 
-The models are not validated for prospective solubility prediction or for decision-critical use.
+---
+
+## Scope and limitations
+
+This is a controlled benchmark on one property, intended for research, education and methodological comparison. The models are not validated for prospective solubility prediction or for decision-critical use.
+
+- One property, two data sets. Aqueous solubility has an unusually well-established descriptor baseline, so the representation result should not be read as a general claim.
+- Added noise is independent Gaussian or outlier corruption. Real assay error can be systematic, method-dependent or correlated with structure.
+- "Noise 0" means no added noise, not error-free labels. The reported values already carry measurement error.
+- The independent noisy copy of the test labels is drawn from the same generator as the training noise, so agreement between the two is a consistency check. The AqSolDB replicate comparison partly closes that gap.
+- The cluster split chooses, among 200 random cluster orderings, the one whose test-set mean label is closest to the training mean. That selection reads the test labels. No model is given a test label, but a model's absolute score under this split should not be quoted as held-out performance.
+- On AqSolDB both Gaussian processes are fitted to a random subset of 4,000 training compounds, so AqSolDB comparisons involving a GP are confounded with training-set size.
+- One configuration per model, selected on clean labels before any noise experiment and held across all conditions.
+- Neural-network results use one PyTorch thread. Different thread counts change the order of floating-point operations and shift results slightly, within the seed-to-seed spread.
 
 ---
 
 ## Models
 
-| Model | Input representation | Source of uncertainty |
-|---|---|---|
-| Training mean | None | Standard deviation of training labels |
-| Gaussian process (scikit-learn) | 12 RDKit physicochemical descriptors | Posterior variance with a learned white-noise term |
-| Random forest (scikit-learn) | Morgan fingerprints (radius 2, 2,048 bits) | Spread of predictions across 300 trees |
-| Fingerprint network (PyTorch) | Morgan fingerprints (radius 2, 2,048 bits) | Deep ensemble of 5 networks |
-| Graph network (PyTorch) | Atom and bond features | Deep ensemble of 5 networks |
+| Model | Input representation | Aleatoric variance | Epistemic variance |
+|---|---|---|---|
+| Training mean | None | Training-label variance | Variance of the mean |
+| ESOL equation | Four Delaney descriptors | Residual variance | Variance of the fitted mean |
+| GP, descriptors | 12 RDKit descriptors | Fitted white-noise variance | Posterior variance of the latent function |
+| GP, Tanimoto | Morgan fingerprints (radius 2, 2,048 bits) | Fitted white-noise variance | Posterior variance of the latent function |
+| RF, descriptors | 12 RDKit descriptors | None | Variance across trees |
+| RF, fingerprints | Morgan fingerprints | None | Variance across trees |
+| Ensemble, fingerprints | Morgan fingerprints | Mean of member variances | Variance of member means |
+| Ensemble, graph | Atom and bond features | Mean of member variances | Variance of member means |
 
-The graph network is a message-passing neural network (Gilmer et al., 2017) implemented in plain PyTorch without a graph library. Each atom receives messages from its bonded neighbours over three rounds, a GRU cell updates the atom state, and sum and mean pooling produce one vector per molecule. Both PyTorch models predict a mean and a variance for each molecule and are trained with a Gaussian negative log-likelihood, following a 10-epoch warm-up on squared error. The ensemble variance combines the average predicted noise with the disagreement between members (Lakshminarayanan et al., 2017).
-
----
-
-## Experimental Design
-
-**Splits.** Random and scaffold splits, both 80/10/10 for training, validation, and test. In the scaffold split each Bemis-Murcko scaffold is assigned whole to one set, so test molecules contain ring systems absent from training. Scaffold groups larger than half the validation set are assigned to training first.
-
-**Label noise.** Gaussian noise with standard deviation 0, 0.3, 0.6, or 1.0 log10 mol/L is added to training and validation labels on both splits. A level of 2.0 was run on the random split. Validation labels receive noise because, in practice, they are measured in the same way as training labels. Test labels are never altered, so every score is a distance from the reported experimental value.
-
-**Metrics.**
-
-- RMSE and MAE on the clean test set
-- One-sigma and 95% interval coverage (targets 0.68 and 0.95)
-- Spearman rank correlation between predicted standard deviation and absolute error
+The graph network is a message-passing neural network (Gilmer et al., 2017) in plain PyTorch, without a graph library. Each atom receives messages from its bonded neighbours over three rounds, a GRU cell updates the atom state, and sum and mean pooling give one vector per molecule. Both networks predict a mean and a variance per molecule and are trained on a Gaussian negative log-likelihood after a 10-epoch squared-error warm-up, as five-member deep ensembles (Lakshminarayanan et al., 2017). The Tanimoto GP uses k(x, x') = a·T(x, x') plus white noise (Ralaivola et al., 2005), with the amplitude and noise fitted by maximum marginal likelihood using an analytic gradient.
 
 ---
 
-## Results
+## Experimental design
 
-### Test RMSE (log10 mol/L, lower is better)
+**Data.** ESOL is used as distributed with MoleculeNet. AqSolDB is verified against its SHA-256 checksum, then curated by removing multi-component entries, unparseable SMILES, entries containing elements outside common organic chemistry, molecules with fewer than two heavy atoms, and duplicates after canonicalization without stereochemistry, leaving 8,489 compounds.
 
-![Test RMSE against label noise](figures/rmse_vs_noise.png)
+**Splits.** All splits are 80/10/10. Random permutes by seed. Scaffold assigns whole Bemis-Murcko scaffold groups, largest first to training. Cluster groups molecules by Taylor-Butina clustering of Morgan fingerprints at a Tanimoto threshold of 0.4, assigns whole clusters, and keeps the ordering whose test mean label is closest to the training mean.
 
-**Random split**
+**Label noise.** Applied to training and validation labels only; test labels are never altered. Gaussian at sigma 0, 0.3, 0.6, 1.0 and 2.0 on ESOL, and 0, 0.6 and 1.0 on AqSolDB. Outlier corruption at 5%, 10% and 20% on ESOL and 10% on AqSolDB, each corrupted label shifted by 1 to 3 log units with random sign.
 
-| Model | Noise 0 | Noise 0.3 | Noise 0.6 | Noise 1.0 | Noise 2.0 |
-|---|---|---|---|---|---|
-| Training mean | 2.20 ± 0.14 | 2.20 ± 0.14 | 2.20 ± 0.15 | 2.20 ± 0.15 | 2.20 ± 0.16 |
-| Gaussian process | 0.64 ± 0.02 | 0.69 ± 0.03 | 0.70 ± 0.06 | 0.74 ± 0.06 | 0.84 ± 0.08 |
-| Random forest | 1.15 ± 0.12 | 1.15 ± 0.12 | 1.17 ± 0.11 | 1.21 ± 0.10 | 1.31 ± 0.08 |
-| Fingerprint network | 1.14 ± 0.10 | 1.15 ± 0.09 | 1.16 ± 0.09 | 1.23 ± 0.11 | 1.52 ± 0.16 |
-| Graph network | 0.57 ± 0.03 | 0.59 ± 0.03 | 0.63 ± 0.06 | 0.72 ± 0.05 | 0.87 ± 0.06 |
-
-**Scaffold split**
-
-| Model | Noise 0 | Noise 0.3 | Noise 0.6 | Noise 1.0 |
-|---|---|---|---|---|
-| Training mean | 3.10 ± 0.16 | 3.10 ± 0.17 | 3.11 ± 0.18 | 3.12 ± 0.18 |
-| Gaussian process | 1.18 ± 0.08 | 1.06 ± 0.04 | 0.93 ± 0.15 | 0.88 ± 0.19 |
-| Random forest | 2.25 ± 0.12 | 2.26 ± 0.10 | 2.29 ± 0.08 | 2.31 ± 0.07 |
-| Fingerprint network | 2.02 ± 0.03 | 2.10 ± 0.03 | 2.10 ± 0.06 | 2.19 ± 0.19 |
-| Graph network | 0.72 ± 0.13 | 0.71 ± 0.09 | 0.73 ± 0.10 | 0.77 ± 0.07 |
-
-At a noise level of 2.0 on the random split, the added error equals the spread of the dataset, yet all four models still outperform the training mean. The Gaussian process (0.84 ± 0.08) and the graph network (0.87 ± 0.06) overlap within their seed-to-seed spread and cannot be separated at this level. The fingerprint network shows the largest loss, from 1.23 at noise 1.0 to 1.52.
-
-The scaffold split is difficult on this dataset for an additional reason. The two largest scaffold groups (acyclic molecules and molecules whose only ring is a single benzene) are assigned to training, leaving the test set with larger, less soluble multi-ring compounds. Across the three seeds the mean training label was about -2.9 log units and the mean test label ranged from -4.3 to -5.1. The models are therefore required to extrapolate, which the fingerprint-based models do poorly.
-
-### Reliability of Predicted Uncertainty
-
-One-sigma coverage is the fraction of test molecules whose experimental value lies within the predicted one-sigma interval. A well-calibrated model scores about 0.68. Lower values indicate overconfidence.
-
-![One-sigma coverage against label noise](figures/coverage_vs_noise.png)
-
-| Model | Random, noise 0 | Random, noise 1.0 | Random, noise 2.0 | Scaffold, noise 0 | Scaffold, noise 1.0 |
-|---|---|---|---|---|---|
-| Gaussian process | 0.70 ± 0.02 | 0.91 ± 0.03 | 0.98 ± 0.02 | 0.52 ± 0.09 | 0.86 ± 0.08 |
-| Random forest | 0.61 ± 0.04 | 0.73 ± 0.03 | 0.81 ± 0.03 | 0.41 ± 0.09 | 0.49 ± 0.04 |
-| Fingerprint network | 0.68 ± 0.08 | 0.77 ± 0.04 | 0.75 ± 0.08 | 0.37 ± 0.04 | 0.43 ± 0.01 |
-| Graph network | 0.74 ± 0.01 | 0.88 ± 0.02 | 0.98 ± 0.02 | 0.71 ± 0.04 | 0.91 ± 0.03 |
-
-On the random split with clean labels, all four models lie close to the 0.68 target. As noise increases, coverage for the Gaussian process and the graph network climbs to 0.98, meaning nearly every experimental value falls inside an interval designed to contain about 68% of them. Both models absorb the label noise into their uncertainty, so their intervals become much wider than their actual error against clean values. A user ranking compounds by these intervals would overestimate how wrong the predictions are.
-
-On the scaffold split, the random forest and the fingerprint network cover the experimental value only about 40% of the time, and the rank correlation between their predicted uncertainty and actual error is about -0.3 (see `results/summary.md`). These models are most confident on the molecules they predict worst. The graph network remains close to target, at 0.71, with clean labels.
-
-### Gaussian Process Diagnostic
-
-On the scaffold split, the Gaussian process improved as labels became noisier, from 1.18 RMSE with clean labels to 0.88 at noise 1.0. The diagnostic script (`scripts/gp_diagnostic.py`, output in `results/gp_diagnostic.csv`) compares the fitted kernels:
-
-| Labels | Median length scale | Learned noise term (standardized units) |
-|---|---|---|
-| Clean | 2.0 to 2.4 | about 0.04 |
-| Noise 1.0 | 5.8 to 28.7 | about 0.27 |
-
-Noisy labels led the model to a smoother function, which extrapolated better to unseen scaffolds. The model fitted to clean labels captured fine structure that did not transfer. This observation rests on three seeds and one dataset and should be tested further before it is generalized.
+**Grid.** 240 ESOL conditions (3 splits x 8 noise settings x 10 seeds) and 60 AqSolDB conditions (3 splits x 4 noise settings x 5 seeds).
 
 ---
 
 ## Installation
 
-### Requirements
-
-- Python 3.10 or higher
-- PyTorch 2.x (the CPU build is sufficient)
-- RDKit, scikit-learn, NumPy, pandas, SciPy, Matplotlib, pytest
-
-### Setup
+Python 3.10 or later, CPU only.
 
 ```bash
-# Clone the repository
 git clone https://github.com/Oluwaseun-O-Ajayi/solubility-noise-benchmark.git
 cd solubility-noise-benchmark
-
-# Install the CPU build of PyTorch, then the remaining dependencies
-pip install torch --index-url https://download.pytorch.org/whl/cpu
+python -m venv .venv
+source .venv/bin/activate          # Windows: .venv\Scripts\activate
+pip install --upgrade pip
 pip install -r requirements.txt
-
-# Run the test suite
 pytest -q
 ```
 
-On Windows, a dedicated environment avoids conflicts between PyTorch and existing packages:
-
-```bash
-conda create -n solnoise python=3.11 -y
-conda activate solnoise
-```
+`requirements-lock.txt` records the exact versions used for the published run. To reproduce that environment rather than the latest compatible one, install from it instead.
 
 ---
 
 ## Usage
 
-### Full Experimental Grid
+### Full grid
 
 ```bash
-python scripts/run_experiments.py --threads 1
-python scripts/summarize.py
-python scripts/gp_diagnostic.py
+python scripts/make_grid.py                       # writes grids/esol.csv and grids/aqsoldb.csv
+bash scripts/run_local.sh grids/esol.csv 4        # 4 worker processes
+python scripts/collect.py                         # merge metrics, report what is missing
+python scripts/analyze.py                         # summary tables, paired comparisons, figures
 ```
 
-The full grid contains 24 conditions (2 splits, 4 noise levels, 3 seeds). Each condition takes about 4 minutes on a 2-core CPU. Seeds can be run as separate processes.
-
-### Single Condition
+### One condition
 
 ```bash
-python scripts/run_experiments.py --seeds 0 --splits random --sigmas 0 --out results/quick.csv
+python scripts/run_benchmark.py --dataset esol --split scaffold --noise-type gaussian \
+    --level 1.0 --seed 0 --threads 1 --out results/v2
 ```
 
-### Additional Noise Level
+### On a Slurm cluster
 
 ```bash
-python scripts/run_experiments.py --seeds 0 1 2 --splits random --sigmas 2.0 --threads 1 --out results/noise_2.csv
+sbatch slurm/test_one.sh          # one condition, plus the test suite
+sbatch slurm/esol_array.sh        # 240 conditions
+sbatch slurm/aqsoldb_array.sh     # 60 conditions
 ```
 
-### Command-Line Options
-
-| Option | Default | Description |
-|---|---|---|
-| `--seeds` | `0 1 2` | Random seeds |
-| `--splits` | `random scaffold` | Split types |
-| `--sigmas` | `0.0 0.3 0.6 1.0` | Label noise levels (log10 mol/L) |
-| `--members` | `5` | Networks per deep ensemble |
-| `--threads` | `0` (PyTorch default) | CPU threads for PyTorch |
-| `--out` | `results/results.csv` | Output file |
+`docs/SAPELO2.md` gives a step-by-step walkthrough for the University of Georgia Sapelo2 cluster, which was used for the published run. The array scripts pass `--skip-existing`, so resubmitting the same array reruns only missing conditions.
 
 ---
 
-## Project Structure
+## Project structure
 
 ```
 solubility-noise-benchmark/
 ├── solnoise/
-│   ├── data.py          # ESOL loading and SMILES canonicalization
+│   ├── data.py          # ESOL and AqSolDB loading, curation, checksum
 │   ├── features.py      # Descriptors, Morgan fingerprints, molecular graphs
-│   ├── splits.py        # Random and scaffold splits
-│   ├── noise.py         # Gaussian label noise
-│   ├── baselines.py     # Gaussian process and random forest
+│   ├── splits.py        # Random, scaffold, Taylor-Butina cluster splits
+│   ├── noise.py         # Gaussian and outlier label noise
+│   ├── baselines.py     # Earlier GP and random forest wrappers
+│   ├── models.py        # All eight models behind one fit/predict interface
 │   ├── networks.py      # Fingerprint network, graph network, Gaussian likelihood
 │   ├── training.py      # Training loop, early stopping, deep ensembles
 │   ├── metrics.py       # RMSE, MAE, coverage, uncertainty-error correlation
-│   └── experiment.py    # One condition: split, noise level, seed, all models
+│   ├── uq_metrics.py    # NLL, miscalibration area, ENCE, recalibration, conformal
+│   ├── benchmark.py     # One condition: split, noise, seed, all models
+│   └── experiment.py    # Earlier single-condition driver
 ├── scripts/
-│   ├── run_experiments.py
-│   ├── summarize.py
-│   └── gp_diagnostic.py
-├── tests/               # 21 unit tests
-├── data/esol.csv
-├── results/             # Raw results, summary tables, diagnostic output
-└── figures/
+│   ├── make_grid.py     run_benchmark.py   run_local.sh
+│   ├── collect.py       analyze.py         tune.py
+│   └── run_experiments.py  summarize.py    gp_diagnostic.py
+├── configs/models.json  # One fixed configuration per model
+├── grids/               # Condition lists for the full grid
+├── slurm/               # Job array scripts
+├── tests/               # 36 unit tests
+├── data/                # esol.csv, aqsoldb.csv, provenance and licence notes
+├── results/v2/          # metrics/, predictions/, merged tables, summary, paired
+├── figures/             # Figure scripts and output
+└── docs/SAPELO2.md
 ```
 
 ---
 
 ## Testing
 
-The test suite contains 21 tests and runs in about 15 seconds. It covers featurization, split integrity (no scaffold shared between sets), noise reproducibility, metric correctness against Gaussian theory, network output shapes, and training behaviour. It also verifies that the graph network returns the same prediction when the atoms of a molecule are listed in a different order, and the same prediction for a molecule alone or within a batch.
+36 tests covering featurization, split integrity (no scaffold or cluster shared between sets), noise reproducibility, uncertainty metrics against analytically known calibrated and miscalibrated cases, conformal coverage on exchangeable data, and model output shapes and variances. The graph network is checked for invariance to atom ordering and for giving the same prediction alone or in a batch.
 
 ```bash
 pytest -q
@@ -259,83 +193,40 @@ pytest -q
 
 ---
 
-## Output Files
+## Output files
 
-- `results/results.csv`: one row per model per condition, with all metrics
-- `results/noise_2.csv`: the noise 2.0 condition on the random split
-- `results/summary.md`: mean ± standard deviation tables
-- `results/gp_diagnostic.csv`: fitted Gaussian process kernel parameters
-- `figures/rmse_vs_noise.png`, `figures/coverage_vs_noise.png`, `figures/rank_corr_vs_noise.png`
-
----
-
-## Research Applications
-
-- **Drug discovery:** assessing how assay error in ADME training data propagates to property predictions
-- **Model selection:** comparing representations and model classes under realistic distribution shift
-- **Uncertainty quantification:** testing whether predictive intervals remain reliable when labels are noisy
-- **Teaching:** a compact, tested reference implementation of a message-passing network and deep ensembles
+- `results/v2/metrics/<condition>.csv`: one row per model, all metrics for that condition
+- `results/v2/predictions/<condition>.csv.gz`: one row per test molecule per model, with predicted mean, epistemic and aleatoric variance, maximum Tanimoto similarity to training, and recorded inter-source SD where available
+- `results/v2/metrics_all.csv`: all metric files merged
+- `results/v2/summary.csv`: means with 95% bootstrap confidence intervals
+- `results/v2/paired.csv`: within-seed paired model differences
+- `results/tuning/tuning.csv`: the hyperparameter search
+- `figures/v2/`: all figures, PNG and PDF at 600 dpi
 
 ---
 
-## Future Work
+## Data sources and licences
 
-- Extension to a second property, such as lipophilicity (about 4,200 compounds)
-- Systematic error models, such as an offset between laboratories
-- Recalibration of predictive intervals under label noise
-- Evaluation of every model on every input representation
+- **ESOL**: Delaney, *J. Chem. Inf. Comput. Sci.*, 2004, **44**, 1000, as processed and distributed with MoleculeNet.
+- **AqSolDB**: Sorkun, Khetan and Er, *Sci. Data*, 2019, **6**, 143, distributed under CC0. See `data/README.md`.
 
----
-
-## Data Source
-
-`data/esol.csv` is the processed ESOL file distributed with DeepChem and MoleculeNet.
-
----
-
-## References
-
-- Delaney, J. S. (2004). ESOL: Estimating aqueous solubility directly from molecular structure. *Journal of Chemical Information and Computer Sciences*, 44(3), 1000-1005.
-- Wu, Z., et al. (2018). MoleculeNet: a benchmark for molecular machine learning. *Chemical Science*, 9, 513-530.
-- Bemis, G. W., & Murcko, M. A. (1996). The properties of known drugs. 1. Molecular frameworks. *Journal of Medicinal Chemistry*, 39(15), 2887-2893.
-- Rogers, D., & Hahn, M. (2010). Extended-connectivity fingerprints. *Journal of Chemical Information and Modeling*, 50(5), 742-754.
-- Gilmer, J., et al. (2017). Neural message passing for quantum chemistry. *Proceedings of the 34th International Conference on Machine Learning*.
-- Lakshminarayanan, B., Pritzel, A., & Blundell, C. (2017). Simple and scalable predictive uncertainty estimation using deep ensembles. *Advances in Neural Information Processing Systems 30*.
-
----
-
-## License
-
-MIT License. See `LICENSE`.
+Code in this repository is MIT licensed.
 
 ---
 
 ## Citation
 
-If you use this benchmark in research or teaching, please cite:
-
-```text
-Ajayi, O. O. (2026).
-
-Solubility Noise Benchmark: Molecular property models under label noise and scaffold shift
-(Version 0.1.2) [Computer software].
-
-Zenodo.
-
-DOI: 10.5281/zenodo.23308184
-```
-
-### BibTeX
+If you use this software, cite the archived version:
 
 ```bibtex
-@software{solubility_noise_benchmark_2026,
-  author = {Ajayi, Oluwaseun O.},
-  title = {Solubility Noise Benchmark: Molecular property models under label noise and scaffold shift},
-  year = {2026},
-  version = {0.1.2},
+@software{ajayi_solubility_noise_benchmark_2026,
+  author    = {Ajayi, Oluwaseun O.},
+  title     = {Solubility Noise Benchmark: label noise and distribution shift in aqueous solubility models},
+  version   = {1.0.0},
+  year      = {2026},
   publisher = {Zenodo},
-  doi = {10.5281/zenodo.23308184},
-  url = {https://doi.org/10.5281/zenodo.23308184}
+  doi       = {10.5281/zenodo.23966461},
+  url       = {https://github.com/Oluwaseun-O-Ajayi/solubility-noise-benchmark}
 }
 ```
 
@@ -343,6 +234,5 @@ DOI: 10.5281/zenodo.23308184
 
 ## Author
 
-**Oluwaseun O. Ajayi**
-Department of Chemistry, University of Georgia
+Oluwaseun O. Ajayi, Department of Chemistry, University of Georgia.
 ORCID: [0000-0003-0040-7217](https://orcid.org/0000-0003-0040-7217)
