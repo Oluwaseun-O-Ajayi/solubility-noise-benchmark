@@ -6,7 +6,8 @@ import pytest
 from solnoise.features import descriptor_matrix, fingerprint_matrix
 from solnoise.models import (ESOLLinear, GradientBoosting, RandomForest, TanimotoGP, TrainMean,
                              tanimoto)
-from solnoise.noise import add_outlier_noise, corrupt
+from solnoise.data import load_lipophilicity
+from solnoise.noise import add_outlier_noise, add_systematic_noise, corrupt
 from solnoise.splits import butina_clusters, cluster_split
 from solnoise.uq_metrics import (conformal_quantile, coverage, error_based_calibration, gaussian_nll,
                                  miscalibration_area, simulated_rank_correlation, variance_scale)
@@ -149,3 +150,24 @@ def test_unmatched_cluster_split_does_not_match_labels():
         assert sorted(np.concatenate(part)) == list(range(len(fps)))
     gap = lambda s: abs(y[s[2]].mean() - y[s[0]].mean())
     assert gap(matched) <= gap(unmatched) + 1e-9
+
+
+def test_systematic_noise_is_shared_within_groups_at_the_right_scale():
+    y = np.zeros(6000)
+    groups = np.repeat(np.arange(300), 20)
+    noisy = add_systematic_noise(y, 1.0, seed=0, groups=groups)
+    assert noisy.std() == pytest.approx(1.0, abs=0.1)
+    assert max(noisy[groups == k].std() for k in range(300)) < 1e-12
+    assert np.array_equal(corrupt(y, "systematic", 1.0, 0, groups),
+                          corrupt(y, "systematic", 1.0, 0, groups))
+    with pytest.raises(ValueError):
+        corrupt(y, "systematic", 1.0, 0)
+
+
+def test_lipophilicity_curation_is_reproducible_and_leaves_a_usable_set():
+    frame = load_lipophilicity()
+    counts = frame.attrs["curation"]
+    assert counts["raw"] == 4200
+    assert counts["final"] == len(frame) == 4101
+    assert frame.smiles.is_unique
+    assert frame.logS.between(-2, 5).all()

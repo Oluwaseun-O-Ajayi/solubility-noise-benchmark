@@ -16,7 +16,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from .data import load_aqsoldb, load_esol
+from .data import load_aqsoldb, load_esol, load_lipophilicity
 from .features import descriptor_matrix, fingerprint_matrix, smiles_to_graphs
 from .models import REGISTRY, tanimoto
 from .noise import corrupt
@@ -31,7 +31,8 @@ class Dataset:
     """Labels plus all three representations, computed once per process."""
 
     def __init__(self, name):
-        frame = load_esol() if name == "esol" else load_aqsoldb()
+        loaders = {"esol": load_esol, "aqsoldb": load_aqsoldb, "lipo": load_lipophilicity}
+        frame = loaders[name]()
         self.name = name
         self.smiles = list(frame["smiles"])
         self.y = frame["logS"].to_numpy(dtype=np.float64)
@@ -101,8 +102,9 @@ def run_condition(dataset, split, noise_type, level, seed, models=None, config=N
     config = config if config is not None else load_config()
     models = models or config.get("default_models", list(REGISTRY))
     train, valid, test = make_split(data, split, seed)
-    y_noisy = corrupt(data.y, noise_type, level, TRAIN_NOISE_OFFSET + seed)
-    y_test_noisy = corrupt(data.y, noise_type, level, TEST_NOISE_OFFSET + seed)[test]
+    groups = data.clusters if noise_type == "systematic" else None
+    y_noisy = corrupt(data.y, noise_type, level, TRAIN_NOISE_OFFSET + seed, groups)
+    y_test_noisy = corrupt(data.y, noise_type, level, TEST_NOISE_OFFSET + seed, groups)[test]
     y_test = data.y[test]
     max_sim = tanimoto(data.fingerprints[test], data.fingerprints[train]).max(1)
 

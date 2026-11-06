@@ -31,10 +31,33 @@ def add_outlier_noise(y, rate, seed, low=1.0, high=3.0):
     return y + hit * shift
 
 
-def corrupt(y, noise_type, level, seed):
-    """Dispatch to the noise model named ``noise_type`` ("gaussian" or "outlier")."""
+def add_systematic_noise(y, sigma, seed, groups):
+    """Add noise that is shared within a group of structurally related molecules.
+
+    One offset is drawn from N(0, sigma^2) per group and added to every member of
+    that group, so each label still has marginal variance sigma^2 but the errors
+    are perfectly correlated within a group and independent between groups. This
+    stands in for a laboratory or assay bias that moves a whole family of related
+    compounds together, which independent per-molecule noise cannot represent.
+    """
+    y = np.asarray(y, dtype=float)
+    groups = np.asarray(groups)
+    if sigma == 0:
+        return y.copy()
+    rng = np.random.default_rng(seed)
+    keys, inverse = np.unique(groups, return_inverse=True)
+    offsets = rng.normal(0.0, sigma, size=len(keys))
+    return y + offsets[inverse]
+
+
+def corrupt(y, noise_type, level, seed, groups=None):
+    """Dispatch to the named noise model ("gaussian", "outlier" or "systematic")."""
     if noise_type == "gaussian":
         return add_label_noise(y, level, seed)
     if noise_type == "outlier":
         return add_outlier_noise(y, level, seed)
+    if noise_type == "systematic":
+        if groups is None:
+            raise ValueError("systematic noise needs a group label per molecule")
+        return add_systematic_noise(y, level, seed, groups)
     raise ValueError(f"unknown noise type: {noise_type}")
