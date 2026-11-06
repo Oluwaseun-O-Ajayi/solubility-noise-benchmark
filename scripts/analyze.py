@@ -19,19 +19,23 @@ from scipy.stats import norm  # noqa: E402
 ROOT = Path(__file__).resolve().parent.parent
 FIG = ROOT / "figures" / "v2"
 
-MODELS = ["train_mean", "esol_linear", "gp_desc", "gp_tanimoto", "rf_desc", "rf_fp", "fp_net", "graph_net"]
+MODELS = ["train_mean", "esol_linear", "gp_desc", "gp_tanimoto", "rf_desc", "rf_fp",
+          "gbt_desc", "gbt_fp", "fp_net", "graph_net"]
 LABEL = {"train_mean": "Training mean", "esol_linear": "ESOL equation", "gp_desc": "GP, descriptors",
          "gp_tanimoto": "GP, Tanimoto", "rf_desc": "RF, descriptors", "rf_fp": "RF, fingerprints",
+         "gbt_desc": "GBT, descriptors", "gbt_fp": "GBT, fingerprints",
          "fp_net": "Ensemble, fingerprints", "graph_net": "Ensemble, graph"}
 # Okabe-Ito colours by model family; dashed lines mark fingerprint inputs.
 COLOR = {"train_mean": "#9a9a9a", "esol_linear": "#4d4d4d", "gp_desc": "#0072B2", "gp_tanimoto": "#0072B2",
-         "rf_desc": "#E69F00", "rf_fp": "#E69F00", "fp_net": "#009E73", "graph_net": "#CC79A7"}
+         "rf_desc": "#E69F00", "rf_fp": "#E69F00", "gbt_desc": "#D55E00", "gbt_fp": "#D55E00",
+         "fp_net": "#009E73", "graph_net": "#CC79A7"}
 STYLE = {"train_mean": ":", "esol_linear": "-", "gp_desc": "-", "gp_tanimoto": "--", "rf_desc": "-",
-         "rf_fp": "--", "fp_net": "--", "graph_net": "-"}
+         "rf_fp": "--", "gbt_desc": "-", "gbt_fp": "--", "fp_net": "--", "graph_net": "-"}
 MARKER = {"train_mean": "", "esol_linear": "s", "gp_desc": "o", "gp_tanimoto": "o", "rf_desc": "^",
-          "rf_fp": "^", "fp_net": "D", "graph_net": "D"}
+          "rf_fp": "^", "gbt_desc": "v", "gbt_fp": "v", "fp_net": "D", "graph_net": "D"}
 SPLITS = ["random", "cluster", "scaffold"]
-SPLIT_LABEL = {"random": "Random split", "scaffold": "Scaffold split", "cluster": "Cluster split"}
+SPLIT_LABEL = {"random": "Random split", "scaffold": "Scaffold split", "cluster": "Cluster split",
+               "cluster_unmatched": "Cluster split, unmatched"}
 DATASET_LABEL = {"esol": "ESOL", "aqsoldb": "AqSolDB"}
 
 plt.rcParams.update({
@@ -115,14 +119,14 @@ def line_panels(s, dataset, metric, ylabel, name, models=MODELS, reference=None,
 
 def fig_coverage_model(s, dataset="esol"):
     """Observed one-sigma coverage against the prediction 2*Phi(sqrt(RMSE^2+sigma^2)/RMSE)-1."""
-    models = ["esol_linear", "gp_desc", "gp_tanimoto", "rf_desc", "rf_fp", "fp_net", "graph_net"]
+    models = ["esol_linear", "gp_desc", "gp_tanimoto", "rf_desc", "rf_fp", "gbt_desc", "gbt_fp", "fp_net", "graph_net"]
     fig, axes = plt.subplots(1, 2, figsize=(5.0, 2.3))
 
     # panel a: every model, split and data set
     ax = axes[0]
     allm = s[(s.noise_type == "gaussian") & s.model.isin(models)]
     panel_marker = {"esol_linear": "P", "gp_desc": "o", "gp_tanimoto": "v", "rf_desc": "^",
-                    "rf_fp": "s", "fp_net": "D", "graph_net": "d"}
+                    "rf_fp": "s", "gbt_desc": "<", "gbt_fp": ">", "fp_net": "D", "graph_net": "d"}
     seen = set()
     for (ds, sp, model), d in allm.groupby(["dataset", "split", "model"]):
         d = d.sort_values("level")
@@ -162,7 +166,7 @@ def fig_coverage_model(s, dataset="esol"):
 
 
 def fig_error_calibration(preds, dataset="esol", levels=(0.0, 1.0)):
-    models = ["gp_desc", "gp_tanimoto", "rf_desc", "rf_fp", "fp_net", "graph_net"]
+    models = ["gp_desc", "gp_tanimoto", "rf_desc", "rf_fp", "gbt_desc", "gbt_fp", "fp_net", "graph_net"]
     splits = ["random", "cluster", "scaffold"]
     fig, axes = plt.subplots(len(levels), len(splits), figsize=(6.7, 2.2 * len(levels)), squeeze=False)
     for i, level in enumerate(levels):
@@ -199,7 +203,7 @@ def fig_error_calibration(preds, dataset="esol", levels=(0.0, 1.0)):
 
 
 def fig_similarity(preds, dataset="esol", level=0.0, split="scaffold", name="fig5_similarity"):
-    models = ["gp_desc", "gp_tanimoto", "rf_desc", "rf_fp", "fp_net", "graph_net"]
+    models = ["gp_desc", "gp_tanimoto", "rf_desc", "rf_fp", "gbt_desc", "gbt_fp", "fp_net", "graph_net"]
     p = preds[(preds.dataset == dataset) & (preds.level == level) & (preds.noise_type == "gaussian")]
     if split is not None:
         p = p[p.split == split]
@@ -238,11 +242,11 @@ def fig_gp_noise(m, datasets=("esol", "aqsoldb")):
     for ax, ds in zip(axes[0], datasets):
         d = sub[sub.dataset == ds]
         base = d[d.level == 0].groupby(["model", "split"]).fitted_noise_var.mean()
-        for (model, sp), g in d.groupby(["model", "split"]):
+        for (model, sp), g in d[d.split.isin(SPLITS)].groupby(["model", "split"]):
             g = g.groupby("level").fitted_noise_var.mean().reset_index()
             implied = np.sqrt(np.clip(g.fitted_noise_var - base.loc[(model, sp)], 0, None))
             ax.plot(g.level, implied, color=COLOR[model], ls=STYLE[model],
-                    marker={"random": "o", "scaffold": "s", "cluster": "^"}[sp], ms=3.5,
+                    marker={"random": "o", "scaffold": "s", "cluster": "^", "cluster_unmatched": "v"}[sp], ms=3.5,
                     label=f"{LABEL[model]}, {SPLIT_LABEL[sp].split()[0].lower()}")
         lim = d.level.max() * 1.05
         ax.plot([0, lim], [0, lim], color="black", lw=0.6, ls=(0, (4, 3)))
